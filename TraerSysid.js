@@ -1,17 +1,19 @@
-// Client Script
 function onClick() {
-    var selectedSysIds = g_list.getChecked(); // Recoge los sys_id seleccionados en la lista
+    console.log('RFC Grupal: Client Script iniciado'); // Log en consola del navegador
+    var selectedSysIds = g_list.getChecked();
+    console.log('RFC Grupal: SysIds seleccionados:', selectedSysIds);
     if (!selectedSysIds || selectedSysIds.length === 0) {
         alert('Debes seleccionar registros.');
         return;
     }
     var ga = new GlideAjax('RFCGrupalScriptInclude');
+    console.log('RFC Grupal: GlideAjax creado');
     ga.addParam('sysparm_name', 'crearRFCGrupal');
     ga.addParam('sysparm_sysids', selectedSysIds.join(','));
     ga.getXMLAnswer(function(response) {
-        var answer = response;
-        alert(answer);
-        // Opcional: redirige a registro, recarga página, etc.
+        console.log('RFC Grupal: Respuesta de ScriptInclude:', response);
+        alert(response);
+        // Opcional: window.location = ...
     });
 }
 onClick();
