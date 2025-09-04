@@ -1,5 +1,5 @@
 (function executeBulkRFC() {
-    var selectedSysIds = gs.action.getGlideListSelection();
+    var selectedSysIds = (typeof action !== 'undefined' && typeof action.getGlideListSelection === 'function') ? action.getGlideListSelection() : []
     if (!selectedSysIds || selectedSysIds.length == 0) {
         gs.addErrorMessage('Debes seleccionar vulnerabilidades.');
         return;
