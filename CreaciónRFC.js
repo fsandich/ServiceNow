@@ -1,4 +1,3 @@
-// UI Action (Server-side) - Un solo RFC por usuario en ventana de 10s, con tasks sin duplicar.
 (function executeAction(current, action, gs) {
   // ---------- Utilidades ----------
   function getURI() {
@@ -51,10 +50,18 @@
   while (gr.next()) {
     var sys_id = String(gr.getUniqueValue());
     var number = safeGet(gr, ['number']);
+    var vuln_id = safeGet(gr, ['id']); // <-- Obtiene el TEN-XXXXX del campo ID
     var summary = safeGet(gr, ['summary', 'short_description', 'name']);
     var ci = safeGet(gr, ['cmdb_ci', 'configuration_item']);
     var ciDisp = ci ? (gr.getDisplayValue('cmdb_ci') || gr.getDisplayValue('configuration_item')) : '';
-    vulns.push({ sys_id: sys_id, number: number, summary: summary, ci: ci, ciDisp: ciDisp });
+    vulns.push({ 
+      sys_id: sys_id, 
+      number: number, 
+      vuln_id: vuln_id,    // <-- Incluye el ID de vulnerabilidad
+      summary: summary, 
+      ci: ci, 
+      ciDisp: ciDisp 
+    });
   }
 
   if (vulns.length === 0) {
@@ -65,7 +72,7 @@
 
   // ---------- 3) Clave de deduplicación temporal por usuario (bucket 10s) ----------
   var epochMs = parseInt(new GlideDateTime().getNumericValue(), 10);
-  var bucket10s = Math.floor(epochMs / 10000); // 10.000 ms = 10s
+  var bucket10s = Math.floor(epochMs / 10000); // 10,000 ms = 10s
   var corrDisplay = 'create_rfc_from_vulns';
   var corrId = gs.getUserID() + ':' + bucket10s;
 
@@ -88,11 +95,10 @@
     // ---------- 4) Crear el RFC nuevo ----------
     cr.initialize();
     cr.setValue('opened_by', gs.getUserID());
-    cr.setValue('type', 'normal'); // ajusta a tu proceso: 'standard' | 'normal' | 'emergency'
+    cr.setValue('type', 'normal');
     cr.setValue('correlation_display', corrDisplay);
     cr.setValue('correlation_id', corrId);
 
-    // Si todas las vulnerabilidades de ESTA llamada comparten CI, asignarlo
     var firstCI = vulns[0].ci;
     var allSameCI = !!firstCI && vulns.every(function (v) { return v.ci === firstCI; });
 
@@ -107,15 +113,20 @@
         (v.ciDisp ? (' | CI: ' + v.ciDisp) : ''));
     }
     cr.setValue('description', lines.join('\n'));
-    // --- MODIFICACIÓN AQUI PARA ASIGNAR TEN-XXXXX (uno o varios separados por coma) ---
-    var allMatches = descripcion.match(/TEN-\d+/g);
-    if (allMatches && allMatches.length > 0) {
-      cr.setValue('u_id_de_referencia', allMatches.join(','));
-    }
-    // ------------------------------------------------
     if (allSameCI) cr.setValue('cmdb_ci', firstCI);
 
-    // >>> Si tu proceso exige más campos obligatorios, complétalos aquí:
+    // --- NUEVO BLOQUE PARA u_id_de_referencia ---
+    var tenIds = [];
+    for (var i = 0; i < vulns.length; i++) {
+      if (vulns[i].vuln_id) tenIds.push(vulns[i].vuln_id);
+    }
+    tenIds = tenIds.filter(function(v, i, a) { return a.indexOf(v) === i; }); // Quitar duplicados
+    if (tenIds.length > 0) {
+      cr.setValue('u_id_de_referencia', tenIds.join(','));
+    }
+    // ------------------------------------------------
+
+    // Completa más campos obligatorios si aplica aquí:
     // cr.setValue('category', 'Software');
     // cr.setValue('risk', '3 - Moderate');
     // cr.setValue('impact', '3 - Low');
@@ -152,7 +163,7 @@
     var ct = new GlideRecord('change_task');
     ct.initialize();
     ct.setValue('change_request', crId);
-    ct.setValue('correlation_id', v2.sys_id); // dedupe por item
+    ct.setValue('correlation_id', v2.sys_id);
     ct.setValue('short_description', 'Remediar ' + (v2.number || v2.sys_id));
 
     var taskDesc = '';
@@ -167,7 +178,7 @@
     createdTasks++;
   }
 
-  // ---------- 6) (Opcional) Si se está reutilizando, documentar los nuevos ítems añadidos ----------
+  // ---------- 6) (Opcional) Documentar nuevos ítems añadidos ----------
   if (reused && createdTasks > 0) {
     var addLines = [];
     addLines.push('');
@@ -199,4 +210,6 @@
   action.setRedirectURL(cr);
 
 })(current, action, gs);
+// ---------- FIN ----------
+
 
