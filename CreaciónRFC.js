@@ -5,7 +5,7 @@
     try {
       if (action && action.getGlideURI) return action.getGlideURI();
       if (gs.action && gs.action.getGlideURI) return gs.action.getGlideURI();
-    } catch (e) {}
+    } catch (e) { }
     return null;
   }
   function dedupe(arr) {
@@ -94,7 +94,7 @@
 
     // Si todas las vulnerabilidades de ESTA llamada comparten CI, asignarlo
     var firstCI = vulns[0].ci;
-    var allSameCI = !!firstCI && vulns.every(function(v){ return v.ci === firstCI; });
+    var allSameCI = !!firstCI && vulns.every(function (v) { return v.ci === firstCI; });
 
     cr.setValue('short_description', 'Remediación de vulnerabilidades (lote de ' + vulns.length + ')');
 
@@ -103,10 +103,16 @@
     for (var i = 0; i < vulns.length; i++) {
       var v = vulns[i];
       lines.push('- ' + (v.number || v.sys_id) +
-                 (v.summary ? (' | ' + v.summary) : '') +
-                 (v.ciDisp ? (' | CI: ' + v.ciDisp) : ''));
+        (v.summary ? (' | ' + v.summary) : '') +
+        (v.ciDisp ? (' | CI: ' + v.ciDisp) : ''));
     }
     cr.setValue('description', lines.join('\n'));
+    // --- MODIFICACIÓN AQUI PARA ASIGNAR TEN-XXXXX (uno o varios separados por coma) ---
+    var allMatches = descripcion.match(/TEN-\d+/g);
+    if (allMatches && allMatches.length > 0) {
+      cr.setValue('u_id_de_referencia', allMatches.join(','));
+    }
+    // ------------------------------------------------
     if (allSameCI) cr.setValue('cmdb_ci', firstCI);
 
     // >>> Si tu proceso exige más campos obligatorios, complétalos aquí:
@@ -175,8 +181,8 @@
       exists.query();
       if (exists.next()) {
         addLines.push('- ' + (v3.number || v3.sys_id) +
-                      (v3.summary ? (' | ' + v3.summary) : '') +
-                      (v3.ciDisp ? (' | CI: ' + v3.ciDisp) : ''));
+          (v3.summary ? (' | ' + v3.summary) : '') +
+          (v3.ciDisp ? (' | CI: ' + v3.ciDisp) : ''));
       }
     }
     var newDesc = (cr.getValue('description') || '') + '\n' + addLines.join('\n');
