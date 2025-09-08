@@ -95,7 +95,8 @@
     // ---------- 4) Crear el RFC nuevo ----------
     cr.initialize();
     cr.setValue('opened_by', gs.getUserID());
-    cr.setValue('type', 'normal');
+	cr.setValue('chg_model', 'daa007102bbf6a509e3af9edce91bfde');
+    cr.setValue('type', 'solucion de vulnerabilidades');
     cr.setValue('correlation_display', corrDisplay);
     cr.setValue('correlation_id', corrId);
 
@@ -211,5 +212,4 @@
 
 })(current, action, gs);
 // ---------- FIN ----------
-
 
